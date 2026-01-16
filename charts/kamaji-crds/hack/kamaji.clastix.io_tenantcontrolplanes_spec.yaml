@@ -177,9 +177,6 @@ versions:
                               WARNING: for last cut-off releases, the container image could be not available.
                             type: string
                         type: object
-                        x-kubernetes-validations:
-                          - message: replicas must be 0 (or unset) when mode is DaemonSet, and greater than 0 (or unset) when mode is Deployment
-                            rule: '!(self.mode == ''DaemonSet'' && has(self.replicas) && self.replicas != 0) && !(self.mode == ''Deployment'' && has(self.replicas) && self.replicas == 0)'
                       server:
                         default:
                           image: registry.k8s.io/kas-network-proxy/proxy-server
@@ -6896,9 +6893,6 @@ versions:
                           type: object
                         type: array
                     type: object
-                    x-kubernetes-validations:
-                      - message: parentRefs must not specify port or sectionName, these are set automatically by Kamaji
-                        rule: '!has(self.parentRefs) || size(self.parentRefs) == 0 || self.parentRefs.all(ref, !has(ref.port) && !has(ref.sectionName))'
                   ingress:
                     description: Defining the options for an Optional Ingress which will expose API Server of the Tenant Control Plane
                     properties:
@@ -7000,9 +6994,6 @@ versions:
                 required:
                   - service
                 type: object
-                x-kubernetes-validations:
-                  - message: using both ingress and gateway is not supported
-                    rule: '!(has(self.ingress) && has(self.gateway))'
               dataStore:
                 description: |-
                   DataStore specifies the DataStore that should be used to store the Kubernetes data for the given Tenant Control Plane.
@@ -7032,9 +7023,6 @@ versions:
                   to the user to avoid clashes between different TenantControlPlanes. If not set upon creation, Kamaji will default the
                   DataStoreSchema by concatenating the namespace and name of the TenantControlPlane.
                 type: string
-                x-kubernetes-validations:
-                  - message: changing the dataStoreSchema is not supported
-                    rule: self == oldSelf
               dataStoreUsername:
                 description: |-
                   DataStoreUsername allows to specify the username of the database (for relational DataStores). This
@@ -7042,9 +7030,6 @@ versions:
                   to the user to avoid clashes between different TenantControlPlanes. If not set upon creation, Kamaji will default the
                   DataStoreUsername by concatenating the namespace and name of the TenantControlPlane.
                 type: string
-                x-kubernetes-validations:
-                  - message: changing the dataStoreUsername is not supported
-                    rule: self == oldSelf
               kubernetes:
                 description: Kubernetes specification for tenant control plane
                 properties:
@@ -7208,9 +7193,6 @@ versions:
                     description: The default domain name used for DNS resolution within the cluster.
                     pattern: .*\..*
                     type: string
-                    x-kubernetes-validations:
-                      - message: changing the cluster domain is not supported
-                        rule: self == oldSelf
                   dnsServiceIPs:
                     description: |-
                       The DNS Service for internal resolution, it must match the Service CIDR.
@@ -7226,9 +7208,6 @@ versions:
                       Field supported only for Tenant Control Plane instances exposed using a LoadBalancer Service.
                     minLength: 1
                     type: string
-                    x-kubernetes-validations:
-                      - message: LoadBalancerClass is immutable
-                        rule: self == oldSelf
                   loadBalancerSourceRanges:
                     description: |-
                       LoadBalancerSourceRanges restricts the IP ranges that can access
@@ -7275,19 +7254,6 @@ versions:
               - controlPlane
               - kubernetes
             type: object
-            x-kubernetes-validations:
-              - message: unsetting the dataStore is not supported
-                rule: '!has(oldSelf.dataStore) || has(self.dataStore)'
-              - message: unsetting the dataStoreSchema is not supported
-                rule: '!has(oldSelf.dataStoreSchema) || has(self.dataStoreSchema)'
-              - message: unsetting the dataStoreUsername is not supported
-                rule: '!has(oldSelf.dataStoreUsername) || has(self.dataStoreUsername)'
-              - message: LoadBalancer source ranges are supported only with LoadBalancer service type
-                rule: '!has(self.networkProfile.loadBalancerSourceRanges) || (size(self.networkProfile.loadBalancerSourceRanges) == 0 || self.controlPlane.service.serviceType == ''LoadBalancer'')'
-              - message: LoadBalancerClass is supported only with LoadBalancer service type
-                rule: '!has(self.networkProfile.loadBalancerClass) || self.controlPlane.service.serviceType == ''LoadBalancer'''
-              - message: LoadBalancerClass cannot be set or unset at runtime
-                rule: self.controlPlane.service.serviceType != 'LoadBalancer' || (oldSelf.controlPlane.service.serviceType != 'LoadBalancer' && self.controlPlane.service.serviceType == 'LoadBalancer') || has(self.networkProfile.loadBalancerClass) == has(oldSelf.networkProfile.loadBalancerClass)
           status:
             description: TenantControlPlaneStatus defines the observed state of TenantControlPlane.
             properties:

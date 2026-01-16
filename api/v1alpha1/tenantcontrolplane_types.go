@@ -24,14 +24,12 @@ type NetworkProfileSpec struct {
 	// Specify the LoadBalancer class in case of multiple load balancer implementations.
 	// Field supported only for Tenant Control Plane instances exposed using a LoadBalancer Service.
 	// +kubebuilder:validation:MinLength=1
-	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="LoadBalancerClass is immutable"
 	LoadBalancerClass *string `json:"loadBalancerClass,omitempty"`
 	// Address where API server of will be exposed.
 	// In case of LoadBalancer Service, this can be empty in order to use the exposed IP provided by the cloud controller manager.
 	Address string `json:"address,omitempty"`
 	// The default domain name used for DNS resolution within the cluster.
 	//+kubebuilder:default="cluster.local"
-	//+kubebuilder:validation:XValidation:rule="self == oldSelf",message="changing the cluster domain is not supported"
 	//+kubebuilder:validation:Pattern=.*\..*
 	ClusterDomain string `json:"clusterDomain,omitempty"`
 	// AllowAddressAsExternalIP will include tenantControlPlane.Spec.NetworkProfile.Address in the section of
@@ -133,7 +131,6 @@ type AdditionalMetadata struct {
 
 // ControlPlane defines how the Tenant Control Plane Kubernetes resources must be created in the Admin Cluster,
 // such as the number of Pod replicas, the Service resource, or the Ingress.
-// +kubebuilder:validation:XValidation:rule="!(has(self.ingress) && has(self.gateway))",message="using both ingress and gateway is not supported"
 type ControlPlane struct {
 	// Defining the options for the deployed Tenant Control Plane as Deployment resource.
 	Deployment DeploymentSpec `json:"deployment,omitempty"`
@@ -155,7 +152,6 @@ type IngressSpec struct {
 }
 
 // GatewaySpec defines the options for the Gateway which will expose API Server of the Tenant Control Plane.
-// +kubebuilder:validation:XValidation:rule="!has(self.parentRefs) || size(self.parentRefs) == 0 || self.parentRefs.all(ref, !has(ref.port) && !has(ref.sectionName))",message="parentRefs must not specify port or sectionName, these are set automatically by Kamaji"
 type GatewaySpec struct {
 	// AdditionalMetadata to add Labels and Annotations support.
 	AdditionalMetadata AdditionalMetadata `json:"additionalMetadata,omitempty"`
@@ -298,8 +294,6 @@ var (
 	KonnectivityAgentModeDeployment KonnectivityAgentMode = "Deployment"
 )
 
-//+kubebuilder:validation:XValidation:rule="!(self.mode == 'DaemonSet' && has(self.replicas) && self.replicas != 0) && !(self.mode == 'Deployment' && has(self.replicas) && self.replicas == 0)",message="replicas must be 0 (or unset) when mode is DaemonSet, and greater than 0 (or unset) when mode is Deployment"
-
 type KonnectivityAgentSpec struct {
 	// AgentImage defines the container image for Konnectivity's agent.
 	//+kubebuilder:default=registry.k8s.io/kas-network-proxy/proxy-agent
@@ -373,12 +367,6 @@ type DataStoreOverride struct {
 }
 
 // TenantControlPlaneSpec defines the desired state of TenantControlPlane.
-// +kubebuilder:validation:XValidation:rule="!has(oldSelf.dataStore) || has(self.dataStore)", message="unsetting the dataStore is not supported"
-// +kubebuilder:validation:XValidation:rule="!has(oldSelf.dataStoreSchema) || has(self.dataStoreSchema)", message="unsetting the dataStoreSchema is not supported"
-// +kubebuilder:validation:XValidation:rule="!has(oldSelf.dataStoreUsername) || has(self.dataStoreUsername)", message="unsetting the dataStoreUsername is not supported"
-// +kubebuilder:validation:XValidation:rule="!has(self.networkProfile.loadBalancerSourceRanges) || (size(self.networkProfile.loadBalancerSourceRanges) == 0 || self.controlPlane.service.serviceType == 'LoadBalancer')", message="LoadBalancer source ranges are supported only with LoadBalancer service type"
-// +kubebuilder:validation:XValidation:rule="!has(self.networkProfile.loadBalancerClass) || self.controlPlane.service.serviceType == 'LoadBalancer'", message="LoadBalancerClass is supported only with LoadBalancer service type"
-// +kubebuilder:validation:XValidation:rule="self.controlPlane.service.serviceType != 'LoadBalancer' || (oldSelf.controlPlane.service.serviceType != 'LoadBalancer' && self.controlPlane.service.serviceType == 'LoadBalancer') || has(self.networkProfile.loadBalancerClass) == has(oldSelf.networkProfile.loadBalancerClass)",message="LoadBalancerClass cannot be set or unset at runtime"
 
 type TenantControlPlaneSpec struct {
 	// WritePermissions allows to select which operations (create, delete, update) must be blocked:
@@ -399,13 +387,11 @@ type TenantControlPlaneSpec struct {
 	// value is optional and immutable. Note that Kamaji currently doesn't ensure that DataStoreSchema values are unique. It's up
 	// to the user to avoid clashes between different TenantControlPlanes. If not set upon creation, Kamaji will default the
 	// DataStoreSchema by concatenating the namespace and name of the TenantControlPlane.
-	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="changing the dataStoreSchema is not supported"
 	DataStoreSchema string `json:"dataStoreSchema,omitempty"`
 	// DataStoreUsername allows to specify the username of the database (for relational DataStores). This
 	// value is optional and immutable. Note that Kamaji currently doesn't ensure that DataStoreUsername values are unique. It's up
 	// to the user to avoid clashes between different TenantControlPlanes. If not set upon creation, Kamaji will default the
 	// DataStoreUsername by concatenating the namespace and name of the TenantControlPlane.
-	// +kubebuilder:validation:XValidation:rule="self == oldSelf",message="changing the dataStoreUsername is not supported"
 	DataStoreUsername string `json:"dataStoreUsername,omitempty"`
 	// DataStoreOverride defines which kubernetes resources will be stored in dedicated datastores.
 	DataStoreOverrides []DataStoreOverride `json:"dataStoreOverrides,omitempty"`

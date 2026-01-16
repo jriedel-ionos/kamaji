@@ -29,7 +29,6 @@ type KubeconfigGenerator struct {
 
 // CompoundValue allows defining a static, or a dynamic value.
 // Options are mutually exclusive, just one should be picked up.
-// +kubebuilder:validation:XValidation:rule="(has(self.stringValue) || has(self.fromDefinition)) && !(has(self.stringValue) && has(self.fromDefinition))",message="Either stringValue or fromDefinition must be set, but not both."
 type CompoundValue struct {
 	// StringValue is a static string value.
 	StringValue string `json:"stringValue,omitempty"`
