@@ -1,6 +1,6 @@
 module github.com/clastix/kamaji
 
-go 1.25.0
+go 1.25.2
 
 require (
 	github.com/JamesStewy/go-mysqldump v0.2.2
